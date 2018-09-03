@@ -1,0 +1,80 @@
+#!/bin/bash
+
+hChar="#"
+showCount=false
+scale=1
+dChars="[,.?!:;()[]{}'\"]"
+prevWord=-1
+switch=0
+
+while getopts cp:r:s: opt; do
+	case $opt in
+    c)
+    	showCount=true
+    	;;
+	p)
+		hChar="$OPTARG"
+		;;
+	r)
+		dChars="$OPTARG"
+		;;
+	s)
+		scale="$OPTARG"
+		;;
+	*)
+		echo "*"
+		exit 1
+		;;
+    \?)
+		echo "?"
+		exit 1
+    	;;
+	:)
+		echo ":"
+		exit 1
+     	;;
+
+  	esac
+done
+
+shift $(($OPTIND - 1))
+
+if (($# == 0)); then
+	input=/dev/stdin
+elif (($# == 1)); then
+	input=$1
+fi
+
+cat $input | tr "[\t ]" "[\n\n]" | tr -d $dChars | while read line
+do
+	echo -n $line | wc -c
+done | sort -n | uniq -c | sed -E "s/[^0-9]+([0-9]+)[^0-9]+([0-9]+)/\2 \1/" | while read line
+do
+	for word in $line; do
+		if (($switch == 0)); then
+			if (($prevWord == -1)); then
+				prevWord=$(($word-1))
+			fi
+			while (($word != $prevWord+1)); do
+				prevWord=$(($prevWord+1))
+				printf '%4s' "$prevWord "
+				if $showCount; then
+					printf '%6s' "0 "
+				fi
+				echo
+			done
+			prevWord=$(($prevWord+1))
+			printf '%4s' "$word "
+			switch=1
+		elif (($switch == 1)); then
+			if $showCount; then
+				printf '%6s' "$word "
+			fi
+			for (( i = 0; i < $word/$scale; i++ )); do
+				echo -n $hChar
+			done
+			echo
+			switch=0
+		fi
+	done
+done

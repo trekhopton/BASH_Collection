@@ -1,0 +1,26 @@
+#!/bin/bash
+
+chars="[,.?!:;()[]{}'\"]"
+
+while getopts :r: opt; do
+	case $opt in
+	r)
+		chars="$OPTARG"
+		;;
+    \?)
+    	;;
+	:)
+		exit 1
+     	;;
+  	esac
+done
+
+shift $(($OPTIND - 1))
+
+if (($# == 0)); then
+	input=/dev/stdin
+elif (($# == 1)); then
+	input=$1
+fi
+
+cat $input | tr -d "$chars"

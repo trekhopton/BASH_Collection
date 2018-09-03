@@ -1,0 +1,67 @@
+#!/bin/bash
+
+hChar="#"
+showCount=false
+scale=1
+
+while getopts :cp:s: opt; do
+	case $opt in
+    c)
+    	showCount=true
+    	;;
+	p)
+		hChar="$OPTARG"
+		;;
+	s)
+		scale="$OPTARG"
+		;;
+    \?)
+    	echo "Invalid option: -$OPTARG"
+    	;;
+	:)
+		echo "Option -$OPTARG requires an argument."
+		exit 1
+     	;;
+  	esac
+done
+
+shift $(($OPTIND - 1))
+
+if (($# == 0)); then
+	input=/dev/stdin
+elif (($# == 1)); then
+	input=$1
+fi
+
+prevWord=-1
+switch=0
+cat $input | while read line
+do
+	for word in $line; do
+		if (($switch == 0)); then
+			if (($prevWord == -1)); then
+				prevWord=$(($word-1))
+			fi
+			while (($word != $prevWord+1)); do
+				prevWord=$(($prevWord+1))
+				printf '%4s' "$prevWord "
+				if $showCount; then
+					printf '%6s' "0 "
+				fi
+				echo
+			done
+			prevWord=$(($prevWord+1))
+			printf '%4s' "$word "
+			switch=1
+		elif (($switch == 1)); then
+			if $showCount; then
+				printf '%6s' "$word "
+			fi
+			for (( i = 0; i < $word/$scale; i++ )); do
+				echo -n $hChar
+			done
+			echo
+			switch=0
+		fi
+	done
+done
